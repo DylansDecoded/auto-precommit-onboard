@@ -103,121 +103,66 @@ packages/pc-onboard/
 
 ---
 
-## Phase 3 — Template + Init Orchestration
+## ~~Phase 3 — Template + Init Orchestration~~ ✓
 
-**Goal**: The `.pre-commit-config.yaml` template and the `init` command that ties everything together.
+~~**Goal**: The `.pre-commit-config.yaml` template and the `init` command that ties everything together.~~
 
-### Tasks
+### ~~Tasks~~
 
-1. **Implement `templates.py`**
-   - `get_pre_commit_config() -> str` — returns the enterprise standard YAML
-   - Template content (adjust versions/repos to your enterprise standards):
+1. ~~**Implement `templates.py`**~~ ✓
+   - ~~`get_pre_commit_config() -> str` — returns the enterprise standard YAML~~
+   - ~~`write_pre_commit_config(repo_root: Path) -> Path` — writes file with backup~~
 
-   ```yaml
-   repos:
-     - repo: https://github.com/astral-sh/ruff-pre-commit
-       rev: v0.8.6
-       hooks:
-         - id: ruff
-           args: [--fix]
-         - id: ruff-format
+2. ~~**Implement `app.py` — the `run_init()` orchestrator**~~ ✓
+   - ~~Full workflow: detection → mise → dev deps → template → pre-commit install → run-all prompt~~
 
-     - repo: https://github.com/sqlfluff/sqlfluff
-       rev: 3.3.1
-       hooks:
-         - id: sqlfluff-lint
-           args: [--dialect, sparksql]
-         - id: sqlfluff-fix
-           args: [--dialect, sparksql]
+3. ~~**Wire `cli.py` `init` command**~~ ✓
+   - ~~Flags: `--run-all / --no-run-all`, `--no-prompt`, `--verbose`~~
+   - ~~TTY detection and interactive prompt~~
+   - ~~Error handling for DetectionError, MiseError, ToolingError, RunnerError~~
 
-     - repo: https://github.com/pre-commit/mirrors-prettier
-       rev: v4.0.0-alpha.8
-       hooks:
-         - id: prettier
-           types_or: [yaml, markdown, json]
-   ```
+4. ~~**Define `DEV_PACKAGES` constant**~~ ✓
+   - ~~`["ruff", "sqlfluff", "pre-commit"]` in app.py~~
 
-   - `write_pre_commit_config(repo_root: Path) -> Path` — writes file, returns path
-   - If file already exists: back up to `.pre-commit-config.yaml.bak`, then overwrite
-   - Log whether file was created fresh or replaced
+5. ~~**Tests**~~ ✓
+   - ~~`test_templates.py`: 11 tests (YAML validity, backup behavior)~~
+   - ~~`test_app.py`: 15 tests (orchestration, run-all logic)~~
+   - ~~`test_cli.py`: 8 tests (CLI invocation, flags, exit codes)~~
 
-2. **Implement `app.py` — the `run_init()` orchestrator**
-   ```
-   run_init(repo_root, run_all: bool | None, prompt_run_all: bool) -> int:
-       1. manager = detect_manager(repo_root)
-       2. python_version = detect_python_version(repo_root, manager)
-       3. ensure_python(python_version, runner)
-       4. tooling = Tooling.for_manager(manager)
-       5. for cmd in tooling.install_dev_deps(DEV_PACKAGES):
-              runner.run(cmd)
-       6. write_pre_commit_config(repo_root)
-       7. runner.run(tooling.run_pre_commit_install())
-       8. handle run-all prompt/flag logic
-       9. return exit_code
-   ```
-
-3. **Wire `cli.py` `init` command**
-   - Flags:
-     - `--run-all / --no-run-all` (default: None — defer to prompt)
-     - `--no-prompt` (skip interactive prompt, default to no run-all)
-   - TTY detection: only prompt if `sys.stdin.isatty()` and `--no-prompt` not set
-   - Exit code: 0 on success, pre-commit's exit code if run-all executed, 1 on errors
-
-4. **Define `DEV_PACKAGES` constant**
-   - `["ruff", "sqlfluff", "pre-commit"]`
-   - Centralized so it's easy to update enterprise-wide
-
-5. **Tests**
-   - `test_templates.py`: verify YAML content is valid, verify backup behavior on existing file
-   - `test_app.py`: mock runner + filesystem, verify full orchestration order:
-     - detection → mise → dev deps → template → pre-commit install
-   - `test_cli.py`: invoke via `CliRunner`, verify exit codes, verify flag behavior
-
-### Acceptance Criteria
-
-- `pc-onboard init` runs the full workflow in a test repo (mocked subprocess)
-- Template written matches enterprise standard
-- Existing config backed up before overwrite
-- All unit and integration tests pass
+### ~~Acceptance Criteria — All met (79 tests passing)~~
 
 ---
 
-## Phase 4 — Doctor Command + Error Handling Polish
+## ~~Phase 4 — Doctor Command + Error Handling Polish~~ ✓
 
-**Goal**: A diagnostic command and robust error handling for real-world usage.
+~~**Goal**: A diagnostic command and robust error handling for real-world usage.~~
 
-### Tasks
+### ~~Tasks~~
 
-1. **Expand `pc-onboard doctor`**
-   - Checks (each prints pass/fail):
-     - `mise` installed and on PATH
-     - Package manager detected (uv or pipenv)
-     - Python version resolved (and from which source)
-     - Current Python version matches resolved version
-     - Dev packages installed (ruff, sqlfluff, pre-commit importable)
-     - `.pre-commit-config.yaml` exists
-     - Pre-commit hooks installed (`.git/hooks/pre-commit` exists)
-   - Exit code: 0 if all pass, 1 if any fail
+1. ~~**Expand `pc-onboard doctor`**~~ ✓
+   - ~~Comprehensive checks with pass/fail status (✓/✗ indicators):~~
+     - ~~`mise` installed and on PATH~~
+     - ~~Package manager detected (uv or pipenv)~~
+     - ~~Python version resolved (with source information)~~
+     - ~~Current Python version matches resolved version~~
+     - ~~Dev packages installed (ruff, sqlfluff, pre-commit)~~
+     - ~~`.pre-commit-config.yaml` exists~~
+     - ~~Pre-commit hooks installed (`.git/hooks/pre-commit` exists)~~
+   - ~~Exit code: 0 if all pass, 1 if any fail~~
+   - ~~Color-coded output (green for pass, red for fail)~~
 
-2. **Error handling improvements**
-   - Custom exceptions: `DetectionError`, `MiseError`, `ToolingError`
-   - `runner.py`: capture stderr on failure, include in error message
-   - `app.py`: catch each phase's errors, print actionable messages:
-     - "mise not found — install from https://mise.jdx.dev"
-     - "No Python version found in Pipfile or pyproject.toml"
-     - "uv sync failed — check your pyproject.toml dependencies"
-   - `--verbose` flag: print every command before execution
+2. ~~**Error handling improvements**~~ ✓
+   - ~~Custom exceptions already implemented: `DetectionError`, `MiseError`, `ToolingError`, `RunnerError`~~
+   - ~~`runner.py`: stderr capture already implemented~~
+   - ~~`cli.py`: comprehensive exception handling with actionable messages~~
+   - ~~`--verbose` flag: implemented in `init` command, shows commands before execution~~
 
-3. **Tests**
-   - Doctor with all tools present vs missing
-   - Error paths: mise not installed, detection fails, subprocess fails
-   - Verbose mode outputs commands
+3. ~~**Tests**~~ ✓
+   - ~~9 new doctor tests in test_app.py (24 total)~~
+   - ~~5 updated CLI tests for doctor command~~
+   - ~~Test coverage: all checks passing, mise not found, no package manager, version mismatch, packages missing, config missing, hooks not installed, verbose mode~~
 
-### Acceptance Criteria
-
-- `pc-onboard doctor` gives clear pass/fail for each prerequisite
-- Errors produce actionable messages, not stack traces
-- `--verbose` shows all commands being executed
+### ~~Acceptance Criteria — All met (90 tests passing)~~
 
 ---
 

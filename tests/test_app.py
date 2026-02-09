@@ -197,3 +197,156 @@ class TestDevPackages:
         assert "ruff" in DEV_PACKAGES
         assert "sqlfluff" in DEV_PACKAGES
         assert "pre-commit" in DEV_PACKAGES
+
+
+class TestRunDoctor:
+    def test_all_checks_pass_with_complete_setup(self, repo: Path) -> None:
+        """Test doctor when everything is set up correctly."""
+        from pc_onboard.app import run_doctor
+
+        # Setup: uv repo with all files
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+        (repo / ".pre-commit-config.yaml").touch()
+        (repo / ".git" / "hooks").mkdir(parents=True)
+        (repo / ".git" / "hooks" / "pre-commit").touch()
+
+        with patch("pc_onboard.app.shutil.which") as mock_which:
+            mock_which.return_value = "/usr/local/bin/mise"
+            with (
+                patch("pc_onboard.app._get_current_python_version", return_value="3.11.8"),
+                patch("pc_onboard.app._is_package_importable", return_value=True),
+            ):
+                checks = run_doctor(repo)
+
+        # Should have checks for: mise, package_manager, python_version, python_match,
+        # 3 dev packages, pre_commit_config, pre_commit_hooks
+        assert len(checks) >= 9
+
+        # All should pass
+        for check in checks:
+            assert check.passed, f"Check {check.name} failed: {check.message}"
+
+    def test_mise_not_found(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+
+        with patch("pc_onboard.app.shutil.which", return_value=None):
+            checks = run_doctor(repo)
+
+        mise_check = next(c for c in checks if c.name == "mise")
+        assert not mise_check.passed
+        assert "NOT FOUND" in mise_check.message
+
+    def test_no_package_manager(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        # Empty repo
+        checks = run_doctor(repo)
+
+        manager_check = next(c for c in checks if c.name == "package_manager")
+        assert not manager_check.passed
+        assert "NOT DETECTED" in manager_check.message
+
+    def test_python_version_not_found(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text('[project]\nname = "test"\n')
+
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            checks = run_doctor(repo)
+
+        py_version_check = next(c for c in checks if c.name == "python_version")
+        assert not py_version_check.passed
+        assert "not found" in py_version_check.message
+
+    def test_python_version_mismatch(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            with patch("pc_onboard.app._get_current_python_version", return_value="3.10.5"):
+                checks = run_doctor(repo)
+
+        match_check = next(c for c in checks if c.name == "python_match")
+        assert not match_check.passed
+        assert "does not match" in match_check.message
+
+    def test_dev_package_not_installed(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            with (
+                patch("pc_onboard.app._get_current_python_version", return_value="3.11.8"),
+                patch("pc_onboard.app._is_package_importable", return_value=False),
+            ):
+                checks = run_doctor(repo)
+
+        # Check that each dev package check failed
+        for package in DEV_PACKAGES:
+            pkg_check = next(c for c in checks if c.name == f"package_{package}")
+            assert not pkg_check.passed
+            assert "NOT installed" in pkg_check.message
+
+    def test_pre_commit_config_missing(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            checks = run_doctor(repo)
+
+        config_check = next(c for c in checks if c.name == "pre_commit_config")
+        assert not config_check.passed
+        assert "not found" in config_check.message
+
+    def test_pre_commit_hooks_not_installed(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+        (repo / ".pre-commit-config.yaml").touch()
+
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            checks = run_doctor(repo)
+
+        hooks_check = next(c for c in checks if c.name == "pre_commit_hooks")
+        assert not hooks_check.passed
+        assert "NOT installed" in hooks_check.message
+
+    def test_version_source_detection(self, repo: Path) -> None:
+        from pc_onboard.app import run_doctor
+
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            with patch("pc_onboard.app._get_current_python_version", return_value="3.11.8"):
+                checks = run_doctor(repo)
+
+        py_version_check = next(c for c in checks if c.name == "python_version")
+        assert py_version_check.passed
+        assert py_version_check.source == "from pyproject.toml"
