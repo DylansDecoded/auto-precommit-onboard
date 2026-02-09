@@ -107,3 +107,12 @@ repos:
 | Live (optional) | Actual tool invocation | `@pytest.mark.live`, requires uv/pipenv/mise installed | Slow |
 
 All tests except `@pytest.mark.live` should run without any external tools installed.
+
+## TODO/Out of Scope
+
+- **Auto-updating hook versions**: template has pinned revs; update manually or add `pc-onboard update-hooks` later
+- **Custom hook configuration per repo**: all repos get the same enterprise config
+- **Installing uv or pipenv**: these are assumed present
+- **Windows support**: mise + uv/pipenv on Windows is a different problem; target macOS/Linux first
+- **Config file for pc-onboard itself**: no `.pc-onboardrc` — keep it zero-config
+
