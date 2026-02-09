@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -42,13 +43,14 @@ def get_pre_commit_config() -> str:
 def write_pre_commit_config(repo_root: Path) -> Path:
     """Write the enterprise .pre-commit-config.yaml to *repo_root*.
 
-    If the file already exists, backs it up to .pre-commit-config.yaml.bak
+    If the file already exists, backs it up to .pre-commit-config.yaml.backup.TIMESTAMP
     before overwriting. Returns the path to the written config file.
     """
     config_path = repo_root / ".pre-commit-config.yaml"
 
     if config_path.exists():
-        backup_path = repo_root / ".pre-commit-config.yaml.bak"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = repo_root / f".pre-commit-config.yaml.backup.{timestamp}"
         config_path.rename(backup_path)
         logger.info("Backed up existing config to %s", backup_path)
 

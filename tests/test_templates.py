@@ -56,9 +56,10 @@ class TestWritePreCommitConfig:
 
         write_pre_commit_config(repo)
 
-        backup = repo / ".pre-commit-config.yaml.bak"
-        assert backup.exists()
-        assert backup.read_text() == "old content\n"
+        # Check for timestamped backup file
+        backup_files = list(repo.glob(".pre-commit-config.yaml.backup.*"))
+        assert len(backup_files) == 1
+        assert backup_files[0].read_text() == "old content\n"
 
     def test_overwrites_after_backup(self, repo: Path) -> None:
         existing = repo / ".pre-commit-config.yaml"

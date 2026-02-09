@@ -75,9 +75,11 @@ def _version_from_pipfile(path: Path) -> str | None:
     config.read(path)
 
     if config.has_option("requires", "python_full_version"):
-        return config.get("requires", "python_full_version")
+        version = config.get("requires", "python_full_version")
+        return version.strip('"\'')  # Remove quotes if present
     if config.has_option("requires", "python_version"):
-        return config.get("requires", "python_version")
+        version = config.get("requires", "python_version")
+        return version.strip('"\'')  # Remove quotes if present
 
     return None
 

@@ -166,44 +166,53 @@ packages/pc-onboard/
 
 ---
 
-## Phase 5 — Integration Testing + README
+## ~~Phase 5 — Integration Testing + README~~ ✓
 
-**Goal**: Real-world integration tests and documentation for consumers.
+~~**Goal**: Real-world integration tests and documentation for consumers.~~
 
-### Tasks
+### ~~Tasks~~
 
-1. **Integration test suite** (`tests/test_integration.py`)
-   - Creates a temp directory with `git init`
-   - Adds minimal `pyproject.toml` (uv scenario) or `Pipfile` (pipenv scenario)
-   - Runs `pc-onboard init --no-prompt` with a **mock runner** that captures commands
-   - Asserts:
-     - Correct command sequence (mise install → mise use → dev deps → template → pre-commit install)
-     - `.pre-commit-config.yaml` written with expected content
-     - Commands use the correct manager prefix
-   - Optional: a separate test marker (`@pytest.mark.live`) for tests that actually invoke uv/pipenv/mise (skipped in CI unless tools present)
+1. ~~**Integration test suite** (`tests/test_integration.py`)~~ ✓
+   - ~~Creates a temp directory with `git init`~~
+   - ~~Adds minimal `pyproject.toml` (uv scenario) or `Pipfile` (pipenv scenario)~~
+   - ~~Runs `pc-onboard init --no-prompt` with a **mock runner** that captures commands~~
+   - ~~Asserts:~~
+     - ~~Correct command sequence (mise install → mise use → dev deps → template → pre-commit install)~~
+     - ~~`.pre-commit-config.yaml` written with expected content~~
+     - ~~Commands use the correct manager prefix~~
+   - ~~Optional: a separate test marker (`@pytest.mark.live`) for tests that actually invoke uv/pipenv/mise (skipped in CI unless tools present)~~
+   - ~~7 integration tests covering uv, pipenv, command prefixes, and config backup scenarios~~
 
-2. **README.md**
-   - Prerequisites: mise installation link
-   - Installation: how to add pc-onboard as a dev dependency from the CLI tools repo
-     - uv: `uv add --dev pc-onboard@{path=...}`
-     - pipenv: add to `[dev-packages]` in Pipfile with path
-   - Usage:
-     - `pc-onboard init` — full onboarding
-     - `pc-onboard doctor` — check environment
-     - Flags: `--run-all`, `--no-prompt`, `--verbose`
-   - What it does (numbered list matching target state)
-   - Customization: how to update the enterprise pre-commit config template
+2. ~~**README.md**~~ ✓
+   - ~~Prerequisites: mise installation link~~
+   - ~~Installation: how to add pc-onboard as a dev dependency~~
+     - ~~uv: `uv add --dev pc-onboard@{path=...}`~~
+     - ~~pipenv: add to `[dev-packages]` in Pipfile with path~~
+   - ~~Usage:~~
+     - ~~`pc-onboard init` — full onboarding~~
+     - ~~`pc-onboard doctor` — check environment~~
+     - ~~Flags: `--run-all`, `--no-prompt`, `--verbose`~~
+   - ~~What it does (numbered list matching target state)~~
+   - ~~Customization: how to update the enterprise pre-commit config template~~
+   - ~~Architecture, development, and troubleshooting sections~~
 
-3. **pyproject.toml finalization**
-   - Minimum Python version for pc-onboard itself
-   - All dependencies pinned with compatible ranges
-   - Project metadata (description, license, authors)
+3. ~~**pyproject.toml finalization**~~ ✓
+   - ~~Minimum Python version: `>=3.11`~~
+   - ~~Dependencies pinned with compatible ranges (`typer>=0.9,<1.0`)~~
+   - ~~Project metadata: description, license (MIT), authors, keywords, classifiers~~
+   - ~~Project URLs: homepage, repository, issues~~
+   - ~~pytest markers for live tests~~
 
-### Acceptance Criteria
+4. ~~**Bug fixes**~~ ✓
+   - ~~Fixed Pipfile quote stripping in `_version_from_pipfile()` (removed quotes from parsed values)~~
+   - ~~Fixed backup file naming to use timestamps (`.pre-commit-config.yaml.backup.TIMESTAMP`)~~
+   - ~~Updated integration tests to match timestamped backup behavior~~
 
-- Integration tests cover both uv and pipenv scenarios
-- README is sufficient for a developer to install and run the tool
-- Package installs cleanly from path in a fresh repo
+### ~~Acceptance Criteria — All met (97 tests passing)~~
+
+- ~~Integration tests cover both uv and pipenv scenarios~~ ✓
+- ~~README is sufficient for a developer to install and run the tool~~ ✓
+- ~~Package installs cleanly from path in a fresh repo~~ ✓
 
 ---
 

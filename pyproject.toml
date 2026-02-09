@@ -2,13 +2,38 @@
 name = "pc-onboard"
 version = "0.1.0"
 description = "CLI tool to automate repository onboarding for enterprise pre-commit standards"
+readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Organization", email = "dev@example.com"},
+]
+keywords = ["pre-commit", "onboarding", "mise", "uv", "pipenv", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Build Tools",
+    "Typing :: Typed",
+]
 dependencies = [
-    "typer>=0.9",
+    "typer>=0.9,<1.0",
 ]
 
 [project.scripts]
 pc-onboard = "pc_onboard.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/your-org/pc-onboard"
+Repository = "https://github.com/your-org/pc-onboard"
+Issues = "https://github.com/your-org/pc-onboard/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -19,6 +44,9 @@ packages = ["src/pc_onboard"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "live: marks tests that require actual tools (mise, uv, git) to be installed (deselect with '-m \"not live\"')",
+]
 
 [dependency-groups]
 dev = [
