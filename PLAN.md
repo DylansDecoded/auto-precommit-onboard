@@ -73,95 +73,33 @@ packages/pc-onboard/
 
 ---
 
-## Phase 1 — Skeleton + Detection
+## ~~Phase 1 — Skeleton + Detection~~ ✓
 
-**Goal**: Package scaffolding, CLI entrypoint, and reliable detection of package manager and Python version.
+~~**Goal**: Package scaffolding, CLI entrypoint, and reliable detection of package manager and Python version.~~
 
-### Tasks
+### ~~Tasks~~
 
-1. **Create `pyproject.toml`**
-   - Package name: `pc-onboard`
-   - Console script: `pc-onboard = "pc_onboard.cli:app"`
-   - Dependencies: `typer>=0.9`
-   - Dev dependencies: `pytest`, `pytest-tmp-files` (or similar)
+1. ~~**Create `pyproject.toml`**~~
+2. ~~**Implement `detect.py`** — manager detection + Python version resolution~~
+3. ~~**Implement `cli.py` with `doctor` command**~~
+4. ~~**Unit tests for detection**~~
 
-2. **Implement `detect.py`**
-   - `detect_manager(repo_root: Path) -> Literal["uv", "pipenv"]`
-     - `uv.lock` present → `"uv"`
-     - `Pipfile.lock` or `Pipfile` present → `"pipenv"`
-     - Neither → raise `DetectionError` with clear message
-   - `detect_python_version(repo_root: Path, manager: str) -> str | None`
-     - **pipenv path**: Parse `Pipfile` → `[requires].python_version` (e.g., `"3.11"`) or `python_full_version`
-     - **uv path**: Parse `pyproject.toml` → `[project].requires-python` (e.g., `">=3.11,<3.13"`)
-     - **Fallback**: `.python-version` file, then `.tool-versions` file
-     - **Version resolution policy** (for specifier ranges):
-       - `>=3.11,<3.13` → `"3.12"` (highest minor below upper bound)
-       - `>=3.11` (no upper) → `"3.11"` (use the lower bound — conservative, predictable)
-       - Exact: `==3.11.8` → `"3.11.8"`
-     - Returns `None` if nothing found (caller decides whether to warn or fail)
-
-3. **Implement `cli.py` with `doctor` command**
-   - `pc-onboard doctor`: prints detected manager, Python version, mise availability
-   - Useful for debugging and validates the detection logic end-to-end
-
-4. **Unit tests for detection**
-   - Test each manager detection signal (uv.lock, Pipfile, both, neither)
-   - Test Python version parsing for each source (Pipfile, pyproject.toml, .python-version, .tool-versions)
-   - Test range resolution: `>=3.11,<3.13` → `3.12`, `>=3.11` → `3.11`, `==3.11.8` → `3.11.8`
-   - Test fallback ordering: pyproject.toml preferred over .python-version for uv repos
-   - Test `None` return when no version info found
-
-### Acceptance Criteria
-
-- `pip install -e packages/pc-onboard` works
-- `pc-onboard doctor` runs and prints detection results
-- All detection unit tests pass
+### ~~Acceptance Criteria — All met~~
 
 ---
 
-## Phase 2 — mise Integration + Tooling Commands
+## ~~Phase 2 — mise Integration + Tooling Commands~~ ✓
 
-**Goal**: mise operations and manager-specific command generation.
+~~**Goal**: mise operations and manager-specific command generation.~~
 
-### Tasks
+### ~~Tasks~~
 
-1. **Implement `runner.py`**
-   - `run(cmd: list[str], check: bool = True, capture: bool = False) -> subprocess.CompletedProcess`
-   - Wraps `subprocess.run` — the single point of subprocess execution
-   - Logs commands before execution (for verbose mode)
-   - Raises `RunnerError` on non-zero exit when `check=True`
+1. ~~**Implement `runner.py`**~~
+2. ~~**Implement `mise.py`**~~
+3. ~~**Implement `tooling.py`**~~
+4. ~~**Unit tests** — 48/48 tests passing~~
 
-2. **Implement `mise.py`**
-   - `ensure_python(version: str, runner: Runner) -> None`
-     - Checks `mise --version` is available (raises clear error if not)
-     - Runs `mise install python@{version}`
-     - Runs `mise use python@{version}`
-   - If version is `None`, skip with a warning log
-
-3. **Implement `tooling.py`**
-   - `Tooling` base with two implementations: `UvTooling`, `PipenvTooling`
-   - Factory: `Tooling.for_manager(manager: str) -> Tooling`
-   - Methods:
-     - `install_dev_deps(packages: list[str]) -> list[list[str]]` — returns command lists
-       - uv: `[["uv", "add", "--dev", *packages], ["uv", "sync"]]`
-       - pipenv: `[["pipenv", "install", "--dev", *packages]]`
-     - `run_pre_commit_install() -> list[str]`
-       - uv: `["uv", "run", "pre-commit", "install"]`
-       - pipenv: `["pipenv", "run", "pre-commit", "install"]`
-     - `wrap(cmd: list[str]) -> list[str]`
-       - uv: `["uv", "run", *cmd]`
-       - pipenv: `["pipenv", "run", *cmd]`
-
-4. **Unit tests**
-   - `mise.py`: mock runner, verify correct commands issued, verify skip on `None` version
-   - `tooling.py`: verify command lists for both managers, verify `wrap()` prefixing
-   - `runner.py`: test error handling, test `check=False` behavior
-
-### Acceptance Criteria
-
-- Tooling generates correct commands for both uv and pipenv
-- mise module issues correct install/use commands via mock runner
-- All unit tests pass
+### ~~Acceptance Criteria — All met~~
 
 ---
 
