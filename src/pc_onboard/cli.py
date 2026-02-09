@@ -1,13 +1,12 @@
 """CLI entrypoint for pc-onboard."""
 
-import shutil
 from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
 
 from pc_onboard.app import run_init
-from pc_onboard.detect import DetectionError, detect_manager, detect_python_version
+from pc_onboard.detect import DetectionError
 from pc_onboard.mise import MiseError
 from pc_onboard.runner import Runner, RunnerError
 from pc_onboard.tooling import ToolingError
@@ -20,41 +19,39 @@ def doctor(
     repo_root: Annotated[
         Path, typer.Option("--repo-root", "-r", help="Path to the repository root.")
     ] = Path("."),
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Show detailed diagnostic information.")
+    ] = False,
 ) -> None:
-    """Check the current environment and print detection results."""
+    """Check the current environment and print comprehensive diagnostic results."""
+    from pc_onboard.app import run_doctor
+
     repo_root = repo_root.resolve()
     typer.echo(f"Repository: {repo_root}\n")
 
-    # mise availability
-    mise_path = shutil.which("mise")
-    if mise_path:
-        typer.echo(f"  mise: found ({mise_path})")
-    else:
-        typer.echo("  mise: NOT FOUND — install from https://mise.jdx.dev")
+    checks = run_doctor(repo_root)
 
-    # Package manager detection
-    try:
-        manager = detect_manager(repo_root)
-        typer.echo(f"  Package manager: {manager}")
-    except DetectionError as exc:
-        typer.echo(f"  Package manager: NOT DETECTED — {exc}")
-        raise typer.Exit(code=1)
+    # Print results
+    all_passed = True
+    for check in checks:
+        status = "✓" if check.passed else "✗"
+        if check.passed:
+            typer.secho(f"  {status} {check.name}: ", fg=typer.colors.GREEN, nl=False)
+            typer.echo(check.message)
+        else:
+            typer.secho(f"  {status} {check.name}: ", fg=typer.colors.RED, nl=False)
+            typer.echo(check.message)
+            all_passed = False
 
-    # Python version resolution
-    python_version = detect_python_version(repo_root, manager)
-    if python_version:
-        typer.echo(f"  Python version: {python_version}")
-    else:
-        typer.echo("  Python version: not found in repo config files")
-
-    # Pre-commit config
-    config_path = repo_root / ".pre-commit-config.yaml"
-    if config_path.exists():
-        typer.echo("  .pre-commit-config.yaml: exists")
-    else:
-        typer.echo("  .pre-commit-config.yaml: not found")
+        # Show source in verbose mode
+        if verbose and check.source:
+            typer.echo(f"      ({check.source})")
 
     typer.echo()
+
+    if not all_passed:
+        typer.secho("Some checks failed. Run 'pc-onboard init' to set up the repository.", fg=typer.colors.YELLOW)
+        raise typer.Exit(code=1)
 
 
 @app.command()

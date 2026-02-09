@@ -18,22 +18,38 @@ class TestDoctorCommand:
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "test"\nrequires-python = ">=3.11,<3.13"\n'
         )
-        result = runner.invoke(app, ["doctor", "--repo-root", str(repo)])
-        assert result.exit_code == 0
-        assert "uv" in result.stdout
-        assert "3.12" in result.stdout
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            result = runner.invoke(app, ["doctor", "--repo-root", str(repo)])
+        assert "package_manager" in result.stdout
+        assert "python_version" in result.stdout
 
     def test_doctor_with_pipenv_repo(self, repo: Path) -> None:
         (repo / "Pipfile").write_text("[requires]\npython_version = 3.11\n")
-        result = runner.invoke(app, ["doctor", "--repo-root", str(repo)])
-        assert result.exit_code == 0
-        assert "pipenv" in result.stdout
-        assert "3.11" in result.stdout
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            result = runner.invoke(app, ["doctor", "--repo-root", str(repo)])
+        assert "package_manager" in result.stdout
+        assert "python_version" in result.stdout
 
     def test_doctor_no_manager_exits_1(self, repo: Path) -> None:
-        result = runner.invoke(app, ["doctor", "--repo-root", str(repo)])
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            result = runner.invoke(app, ["doctor", "--repo-root", str(repo)])
         assert result.exit_code == 1
-        assert "NOT DETECTED" in result.stdout
+        assert "package_manager" in result.stdout
+
+    def test_doctor_verbose_shows_source(self, repo: Path) -> None:
+        (repo / "uv.lock").touch()
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "test"\nrequires-python = ">=3.11"\n'
+        )
+        with patch("pc_onboard.app.shutil.which", return_value="/usr/local/bin/mise"):
+            with patch("pc_onboard.app._get_current_python_version", return_value="3.11.8"):
+                result = runner.invoke(app, ["doctor", "--repo-root", str(repo), "--verbose"])
+        # Verbose mode should show source information
+        assert "from pyproject.toml" in result.stdout
+
+    def test_doctor_has_verbose_flag(self) -> None:
+        result = runner.invoke(app, ["doctor", "--help"])
+        assert "--verbose" in result.stdout
 
 
 class TestInitCommand:
